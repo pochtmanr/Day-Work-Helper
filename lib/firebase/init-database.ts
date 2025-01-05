@@ -1,0 +1,186 @@
+import { db } from '@/lib/firebase'
+import { collection, addDoc, getDocs, query, where, setDoc, doc, writeBatch } from 'firebase/firestore'
+import { User } from 'firebase/auth'
+
+interface ChatTemplate {
+  userId: string
+  name: string
+  contentMale: string
+  contentFemale: string
+  tags: string[]
+  isPrivate: boolean
+}
+
+interface EmailTemplate {
+  userId: string
+  name: string
+  subject: string
+  contentMale: string
+  contentFemale: string
+  tags: string[]
+  isPrivate: boolean
+}
+
+interface CaseResolution {
+  userId: string
+  title: string
+  description: string
+  steps: {
+    id: string
+    content: string
+    images: string[]
+  }[]
+  tags: string[]
+}
+
+// Helper function to ensure collection exists
+async function ensureCollection(collectionName: string) {
+  console.log(`Ensuring collection ${collectionName} exists...`)
+  try {
+    const collectionRef = collection(db, collectionName)
+    const snapshot = await getDocs(query(collectionRef, where('type', '==', 'placeholder')))
+    
+    if (snapshot.empty) {
+      console.log(`Creating placeholder for ${collectionName}...`)
+      await setDoc(doc(collectionRef, 'placeholder'), {
+        type: 'placeholder',
+        createdAt: new Date()
+      })
+      console.log(`Created placeholder for ${collectionName}`)
+    }
+  } catch (error) {
+    console.error(`Error ensuring collection ${collectionName}:`, error)
+    throw error
+  }
+}
+
+export async function initializeDatabase(user: User) {
+  if (!user) {
+    console.error('No user provided for database initialization')
+    return
+  }
+
+  console.log('Starting database initialization for user:', user.uid)
+
+  try {
+    // First ensure all collections exist
+    await Promise.all([
+      ensureCollection('users'),
+      ensureCollection('chatTemplates'),
+      ensureCollection('emailTemplates'),
+      ensureCollection('caseResolutions'),
+      ensureCollection('caseReplies')
+    ])
+
+    // Create or update user document
+    await setDoc(doc(db, 'users', user.uid), {
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }, { merge: true })
+
+    console.log('User document updated')
+
+    // Initialize templates if they don't exist
+    const batch = writeBatch(db)
+
+    // Check and initialize chat templates
+    const chatTemplatesQuery = query(
+      collection(db, 'chatTemplates'),
+      where('userId', '==', user.uid)
+    )
+    const chatTemplatesSnapshot = await getDocs(chatTemplatesQuery)
+
+    if (chatTemplatesSnapshot.empty) {
+      console.log('Initializing chat templates...')
+      const chatTemplates: ChatTemplate[] = [
+        {
+          userId: user.uid,
+          name: 'Welcome Message',
+          contentMale: 'Hello Mr. {name}, how can I assist you today?',
+          contentFemale: 'Hello Ms. {name}, how can I assist you today?',
+          tags: ['greeting', 'welcome'],
+          isPrivate: false
+        }
+      ]
+
+      chatTemplates.forEach(template => {
+        const docRef = doc(collection(db, 'chatTemplates'))
+        batch.set(docRef, {
+          ...template,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      })
+    }
+
+    // Check and initialize email templates
+    const emailTemplatesQuery = query(
+      collection(db, 'emailTemplates'),
+      where('userId', '==', user.uid)
+    )
+    const emailTemplatesSnapshot = await getDocs(emailTemplatesQuery)
+
+    if (emailTemplatesSnapshot.empty) {
+      console.log('Initializing email templates...')
+      const emailTemplates: EmailTemplate[] = [
+        {
+          userId: user.uid,
+          name: 'Issue Follow-up',
+          subject: 'Following Up on Your Recent Issue',
+          contentMale: 'Dear Mr. {name},\n\nI hope this email finds you well.',
+          contentFemale: 'Dear Ms. {name},\n\nI hope this email finds you well.',
+          tags: ['follow-up', 'support'],
+          isPrivate: false
+        }
+      ]
+
+      emailTemplates.forEach(template => {
+        const docRef = doc(collection(db, 'emailTemplates'))
+        batch.set(docRef, {
+          ...template,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      })
+    }
+
+    // Commit all the batch operations
+    await batch.commit()
+    console.log('Database initialization completed successfully')
+
+  } catch (error) {
+    console.error('Error initializing database:', error)
+    throw error
+  }
+}
+
+// Function to verify database setup
+export async function verifyDatabaseSetup(user: User) {
+  if (!user) return false
+
+  try {
+    console.log('Verifying database setup...')
+    
+    // Check all collections
+    const collections = ['users', 'chatTemplates', 'emailTemplates', 'caseResolutions', 'caseReplies']
+    
+    for (const collectionName of collections) {
+      const collectionRef = collection(db, collectionName)
+      const snapshot = await getDocs(collectionRef)
+      console.log(`Collection ${collectionName} exists with ${snapshot.size} documents`)
+    }
+
+    // Verify user document
+    const userDoc = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)))
+    console.log('User document exists:', !userDoc.empty)
+
+    return true
+  } catch (error) {
+    console.error('Error verifying database setup:', error)
+    return false
+  }
+}
+
