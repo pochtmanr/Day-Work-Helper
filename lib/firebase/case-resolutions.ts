@@ -19,12 +19,12 @@ export interface CaseResolution {
   title: string
   description: string
   reason: string
-  descriptionImages: string[]
-  steps: ResolutionStep[]
-  tags: string[]
+  descriptionImages: string[] | null
+  steps: ResolutionStep[] | null
+  tags: string[] | null
   isPublished: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export const caseResolutionsCollection = 'caseResolutions'
@@ -36,7 +36,8 @@ async function ensureCollectionExists() {
   if (snapshot.empty) {
     await setDoc(doc(collectionRef, 'placeholder'), {
       type: 'placeholder',
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date()
     })
   }
 }
@@ -122,7 +123,7 @@ export async function updateCaseResolution(
     })
   } catch (error: any) {
     console.error('Error updating case resolution:', error)
-    throw new Error('Failed to update case resolution')
+    throw new Error('Failed to update case resolution: ' + (error.message || 'Unknown error'))
   }
 }
 
@@ -136,7 +137,7 @@ export async function deleteCaseResolution(user: User | null, id: string): Promi
     await deleteDoc(docRef)
   } catch (error: any) {
     console.error('Error deleting case resolution:', error)
-    throw new Error('Failed to delete case resolution')
+    throw new Error('Failed to delete case resolution: ' + (error.message || 'Unknown error'))
   }
 }
 

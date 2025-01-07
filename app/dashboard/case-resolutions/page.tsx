@@ -46,7 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from '@/contexts/LanguageContext'
-import { uploadImage, getPublicUrl } from '@/lib/upload'
+
 import { User } from 'firebase/auth'
 
 
@@ -111,42 +111,43 @@ export default function CaseResolutions() {
     }
     setNewResolution(prev => ({
       ...prev,
-      steps: [...prev.steps, newStep]
+      steps: [...(prev.steps || []), newStep]
     }))
   }
 
   const handleStepChange = (id: string, content: string) => {
     setNewResolution(prev => ({
       ...prev,
-      steps: prev.steps.map(step => {
+      steps: prev.steps ? prev.steps.map(step => {
         if (step.id === id) {
           return { ...step, content }
         }
         return step
-      })
+      }) : []
     }))
   }
 
   const handleRemoveStep = (id: string) => {
     setNewResolution(prev => ({
       ...prev,
-      steps: prev.steps.filter(step => step.id !== id)
+      steps: prev.steps ? prev.steps.filter(step => step.id !== id) : []
     }))
   }
 
   const handleTagToggle = (tag: string) => {
     setNewResolution(prev => ({
       ...prev,
-      tags: prev.tags.includes(tag)
+      tags: prev.tags ? prev.tags.includes(tag)
         ? prev.tags.filter(t => t !== tag)
         : [...prev.tags, tag]
+        : [...(prev.tags || []), tag]
     }))
   }
 
   const handleImageTag = (stepId: string, imageUrl: string, tag: string) => {
     setNewResolution(prev => ({
       ...prev,
-      steps: prev.steps.map(step => {
+      steps: prev.steps ? prev.steps.map(step => {
         if (step.id === stepId) {
           return {
             ...step,
@@ -154,14 +155,14 @@ export default function CaseResolutions() {
           }
         }
         return step
-      })
+      }) : []
     }))
   }
 
   const handleDescriptionImageTag = (imageUrl: string) => {
     setNewResolution(prev => ({
       ...prev,
-      descriptionImages: [...prev.descriptionImages, imageUrl]
+      descriptionImages: prev.descriptionImages ? [...prev.descriptionImages, imageUrl] : [imageUrl]
     }))
   }
 
@@ -179,7 +180,7 @@ export default function CaseResolutions() {
     setIsLoading(true)
     try {
       await createCaseResolution(user as unknown as User, newResolution as unknown as Omit<CaseResolution, 'id' | 'userId' | 'createdAt' | 'updatedAt'>)
-      setNewResolution({ title: '', reason: '', description: '', descriptionImages: [], steps: [], tags: [], isPublished: false })
+      setNewResolution({ title: '', description: '',reason: '', descriptionImages: [], steps: [], tags: [], isPublished: false })
       loadResolutions()
       toast({
         title: "Success",
@@ -252,7 +253,7 @@ export default function CaseResolutions() {
   const filteredResolutions = resolutions.filter(resolution => {
     const matchesSearch = resolution.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           resolution.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesTag = selectedTagFilter === 'all' || resolution.tags.includes(selectedTagFilter)
+    const matchesTag = selectedTagFilter === 'all' || (resolution.tags && resolution.tags.includes(selectedTagFilter))
     return matchesSearch && matchesTag
   })
 
@@ -342,7 +343,7 @@ export default function CaseResolutions() {
                 </AlertDialog>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
-                {resolution.tags.map((tag) => {
+                {resolution.tags ? resolution.tags.map((tag) => {
                   const tagConfig = predefinedTags.find(t => t.name === tag)
                   return (
                     <span
@@ -354,7 +355,7 @@ export default function CaseResolutions() {
                       {tag}
                     </span>
                   )
-                })}
+                }) : []}
                 {resolution.isPublished && (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-200 text-green-800">
                     {t('Published')}
@@ -362,9 +363,9 @@ export default function CaseResolutions() {
                 )}
               </div>
               <div className="mb-4 overflow-y-auto">
-                {renderContent(resolution.description, resolution.steps[0]?.links || [])}
+                {renderContent(resolution.description, resolution.steps ? resolution.steps[0]?.links || [] : [])}
               </div>
-              {resolution.descriptionImages.length > 0 && (
+              {resolution.descriptionImages && resolution.descriptionImages.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {resolution.descriptionImages.map((image, index) => (
                     <img
@@ -378,7 +379,7 @@ export default function CaseResolutions() {
                 </div>
               )}
               <div className="space-y-4 overflow-y-auto">
-                {resolution.steps.map((step, index) => (
+                {resolution.steps ? resolution.steps.map((step, index) => (
                   <div key={step.id} className="space-y-2">
                     <div className="flex items-start space-x-2">
                       <span className="font-semibold">{t('Step')} {index + 1}:</span>
@@ -415,10 +416,10 @@ export default function CaseResolutions() {
                       </div>
                     )}
                   </div>
-                ))}
+                )) : []}
               </div>
               <div className="mt-2 text-sm text-gray-500">
-                {t('Created')}: {resolution.createdAt.toLocaleDateString()}
+                {t('Created')}: {resolution.createdAt ? resolution.createdAt.toLocaleDateString() : ''}
               </div>
             </div>
           ))
@@ -474,7 +475,7 @@ export default function CaseResolutions() {
                       type="button"
                       onClick={() => handleTagToggle(tag.name)}
                       className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        newResolution.tags.includes(tag.name)
+                        newResolution.tags && newResolution.tags.includes(tag.name)
                           ? tag.color
                           : 'bg-gray-100 text-gray-800'
                       }`}
@@ -495,7 +496,7 @@ export default function CaseResolutions() {
                   }}
                   onImageTag={(imageUrl) => handleDescriptionImageTag(imageUrl)}
                   maxImages={5}
-                  currentCount={newResolution.descriptionImages.length}
+                  currentCount={newResolution.descriptionImages ? newResolution.descriptionImages.length : 0}
                   isUploading={isLoading}
                 />
               </div>
@@ -509,7 +510,7 @@ export default function CaseResolutions() {
                   </Button>
                 </div>
                 
-                {newResolution.steps.map((step, index) => (
+                {newResolution.steps ? newResolution.steps.map((step, index) => (
                   <div key={step.id} className="space-y-2 p-4 border rounded-lg">
                     <div className="flex justify-between items-start">
                       <span className="font-semibold">{t('Step')} {index + 1}</span>
@@ -531,9 +532,9 @@ export default function CaseResolutions() {
                         handleStepChange(step.id, newContent)
                         setNewResolution(prev => ({
                           ...prev,
-                          steps: prev.steps.map(s => 
+                          steps: prev.steps ? prev.steps.map(s => 
                             s.id === step.id ? { ...s, links } : s
-                          )
+                          ) : []
                         }))
                       }}
                       placeholder={t('Describe this step...')}
@@ -558,7 +559,7 @@ export default function CaseResolutions() {
                       />
                     </div>
                   </div>
-                ))}
+                )) : []}
               </div>
 
               <div className="flex items-center space-x-2">
