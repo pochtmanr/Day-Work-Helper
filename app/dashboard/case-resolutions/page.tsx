@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/select"
 import { useLanguage } from '@/contexts/LanguageContext'
 import { uploadImage, getPublicUrl } from '@/lib/upload'
+import { User } from 'firebase/auth'
 
 
 export default function CaseResolutions() {
@@ -85,8 +86,8 @@ export default function CaseResolutions() {
     
     try {
       setIsLoading(true)
-      const loadedResolutions = await getCaseResolutions(user)
-      setResolutions(loadedResolutions)
+      const loadedResolutions = await getCaseResolutions(user as unknown as User)
+      setResolutions(loadedResolutions as unknown as CaseResolution[])
     } catch (error) {
       console.error('Error loading resolutions:', error)
       toast({
@@ -176,7 +177,7 @@ export default function CaseResolutions() {
 
     setIsLoading(true)
     try {
-      await createCaseResolution(user, newResolution)
+      await createCaseResolution(user as unknown as User, newResolution as unknown as Omit<CaseResolution, 'id' | 'userId' | 'createdAt' | 'updatedAt'>)
       setNewResolution({ title: '', description: '', descriptionImages: [], steps: [], tags: [], isPublished: false })
       loadResolutions()
       toast({
@@ -208,7 +209,7 @@ export default function CaseResolutions() {
 
     try {
       setIsLoading(true)
-      await deleteCaseResolution(user, resolution.id)
+      await deleteCaseResolution(user as unknown as User, resolution.id)
       setResolutions(prev => prev.filter(r => r.id !== resolution.id))
       toast({
         title: "Success",

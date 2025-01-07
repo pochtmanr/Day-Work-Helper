@@ -80,7 +80,7 @@ export default function EmailTemplates() {
       try {
         setIsLoading(true)
         const fetchedTemplates = await getEmailTemplates(user as unknown as FirebaseUser)
-        setTemplates(fetchedTemplates)
+        setTemplates(fetchedTemplates as unknown as EmailTemplate[])
       } catch (error) {
         console.error('Error fetching templates:', error)
         toast({
@@ -406,12 +406,11 @@ export default function EmailTemplates() {
                 </Label>
                 <Select
                   value={newTemplate.language}
-                  onValueChange={(value) => setNewTemplate({ 
+                  onValueChange={(value: 'en' | 'he') => setNewTemplate({ 
                     ...newTemplate, 
                     language: value, 
                     textAlign: value === 'he' ? 'right' : 'left' 
                   })}
-                  className="col-span-3"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('Select a language')} />
@@ -522,8 +521,7 @@ export default function EmailTemplates() {
                   </Label>
                   <Select
                     value={editTemplate.language}
-                    onValueChange={(value) => setEditTemplate({ ...editTemplate, language: value })}
-                    className="col-span-3"
+                    onValueChange={(value: 'en' | 'he') => setEditTemplate({ ...editTemplate, language: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t('Select a language')} />

@@ -1,3 +1,4 @@
+
 export const tagColors: { [key: string]: string } = {
   'new chat': 'bg-blue-200',
   'closing': 'bg-green-200',
@@ -16,10 +17,11 @@ export const tagColors: { [key: string]: string } = {
   'messenger': 'bg-pink-200',
   'business-manager': 'bg-teal-200',
   'commerce-manager': 'bg-red-200',
+  'email': 'bg-gray-200',
+  
 }
 
 export function getTagColor(tag: string): string {
-  console.log(tag)
-  console.log(tagColors[tag])
   return tagColors[tag] || 'bg-gray-200'
+
 }

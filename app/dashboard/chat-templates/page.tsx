@@ -15,11 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { getChatTemplates, deleteChatTemplate, updateChatTemplate, createChatTemplate } from '@/lib/firebase/chat-templates'
+import { getChatTemplates, deleteChatTemplate, updateChatTemplate, createChatTemplate, ChatTemplate } from '@/lib/firebase/chat-templates'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Logo } from '@/components/icons/Logo'
-import { User as FirebaseUser } from 'firebase/auth'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { predefinedTags } from '@/utils/predefined-tags'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -63,8 +62,8 @@ export default function ChatTemplates() {
     const fetchTemplates = async () => {
       if (!user) return;
       try {
-        const fetchedTemplates = await getChatTemplates(user as User);
-        setTemplates(fetchedTemplates);
+        const fetchedTemplates = await getChatTemplates(user as unknown as User);
+        setTemplates(fetchedTemplates as unknown as Template[]);
       } catch (error) {
         console.error('Error fetching templates:', error);
         if (error instanceof Error && 'code' in error && error.code === 'failed-precondition') {
@@ -109,7 +108,7 @@ export default function ChatTemplates() {
   const handleDelete = async (templateId: string) => {
     if (!user) return;
     try {
-      await deleteChatTemplate(user as User, templateId)
+      await deleteChatTemplate(user as unknown as User, templateId)
       setTemplates(prev => prev.filter(template => template.id !== templateId))
       toast({
         title: t('Template Deleted'),
@@ -130,7 +129,7 @@ export default function ChatTemplates() {
     if (!editTemplate || !user) return
 
     try {
-      await updateChatTemplate(user as User, editTemplate.id, editTemplate)
+      await updateChatTemplate(user as unknown as User, editTemplate.id, editTemplate as unknown as Partial<Omit<ChatTemplate, "id" | "userId" | "createdAt">>)
       setTemplates(prev => prev.map(template => template.id === editTemplate.id ? editTemplate : template))
       toast({
         title: t('Template Updated'),
@@ -153,9 +152,9 @@ export default function ChatTemplates() {
     setIsLoading(true)
 
     try {
-      const newTemplateWithId = await createChatTemplate(user as User, newTemplate)
-      setTemplates(prev => [...prev, newTemplateWithId])
-      setNewTemplate({ name: '', contentMale: '', contentFemale: '', tags: [], isPrivate: true, language: 'en' })
+      const newTemplateWithId = await createChatTemplate(user as unknown as User, newTemplate as unknown as Omit<ChatTemplate, "id" | "userId" | "createdAt" | "updatedAt">)
+      setTemplates(prev => [...prev, newTemplateWithId as unknown as Template])
+      setNewTemplate({ name: '', contentMale: '', contentFemale: null, tags: [], isPrivate: true, language: 'en' })
       toast({
         title: t('Template Created'),
         description: t('Your new chat template has been created successfully.'),
@@ -261,7 +260,7 @@ export default function ChatTemplates() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleCopy(selectedGender === 'male' ? template.contentMale : template.contentFemale)}
+                      onClick={() => handleCopy((selectedGender === 'male' ? template.contentMale : template.contentFemale) ?? '')}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -293,7 +292,7 @@ export default function ChatTemplates() {
                 </div>
                 <p className="text-gray-600 text-sm">
                   {replacePlaceholders(
-                    selectedGender === 'male' ? template.contentMale : template.contentFemale,
+                    selectedGender === 'male' ? template.contentMale : template.contentFemale ?? '',
                     { name: userName }
                   )}
                 </p>
@@ -343,7 +342,7 @@ export default function ChatTemplates() {
                 </Label>
                 <Textarea
                   id="contentMale"
-                  value={newTemplate.contentMale}
+                  value={newTemplate.contentMale ?? ''}
                   onChange={(e) => setNewTemplate({ ...newTemplate, contentMale: e.target.value })}
                   className="col-span-3"
                 />
@@ -354,7 +353,7 @@ export default function ChatTemplates() {
                 </Label>
                 <Textarea
                   id="contentFemale"
-                  value={newTemplate.contentFemale}
+                  value={newTemplate.contentFemale ?? ''}
                   onChange={(e) => setNewTemplate({ ...newTemplate, contentFemale: e.target.value })}
                   className="col-span-3"
                 />
@@ -384,7 +383,6 @@ export default function ChatTemplates() {
                 <Select
                   value={newTemplate.language}
                   onValueChange={(value) => setNewTemplate({ ...newTemplate, language: value as 'en' | 'he' })}
-                  className="col-span-3"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('Select a language')} />
@@ -444,7 +442,7 @@ export default function ChatTemplates() {
                   </Label>
                   <Textarea
                     id="editContentMale"
-                    value={editTemplate.contentMale}
+                    value={editTemplate.contentMale ?? ''}
                     onChange={(e) => setEditTemplate({ ...editTemplate, contentMale: e.target.value })}
                     className="col-span-3"
                   />
@@ -455,7 +453,7 @@ export default function ChatTemplates() {
                   </Label>
                   <Textarea
                     id="editContentFemale"
-                    value={editTemplate.contentFemale}
+                    value={editTemplate.contentFemale ?? ''}
                     onChange={(e) => setEditTemplate({ ...editTemplate, contentFemale: e.target.value })}
                     className="col-span-3"
                   />
@@ -489,7 +487,7 @@ export default function ChatTemplates() {
                   <Select
                     value={editTemplate.language}
                     onValueChange={(value) => setEditTemplate({ ...editTemplate, language: value as 'en' | 'he' })}
-                    className="col-span-3"
+                    
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t('Select a language')} />

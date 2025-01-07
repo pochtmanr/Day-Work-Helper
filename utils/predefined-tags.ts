@@ -18,4 +18,5 @@ export const predefinedTags = [
   { name: 'call permission', color: 'bg-indigo-100 text-indigo-800' },
   { name: 'no response', color: 'bg-teal-100 text-teal-800' },
   { name: 'other', color: 'bg-gray-100 text-gray-800' },
+  { name: 'email', color: 'bg-gray-100 text-gray-800' },
 ]
