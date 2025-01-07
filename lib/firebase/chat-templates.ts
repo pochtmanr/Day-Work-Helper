@@ -9,6 +9,7 @@ export interface ChatTemplate {
   contentMale: string
   contentFemale: string
   tags: string[]
+  language: 'en' | 'he'
   createdAt: Date
   updatedAt: Date
 }

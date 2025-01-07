@@ -44,6 +44,8 @@ interface EmailTemplate {
   contentFemale: string
   tags: string[]
   isPrivate: boolean
+  language: 'en' | 'he'
+  textAlign: 'left' | 'right'
 }
 
 export default function EmailTemplates() {
@@ -55,7 +57,9 @@ export default function EmailTemplates() {
     contentMale: '',
     contentFemale: '',
     tags: [],
-    isPrivate: false
+    isPrivate: true,
+    language: 'en',
+    textAlign: 'left'
   })
   const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('male')
   const [userName, setUserName] = useState('')
@@ -81,7 +85,7 @@ export default function EmailTemplates() {
         console.error('Error fetching templates:', error)
         toast({
           title: "Error",
-          description: t('Failed to load email templates. Please try again later.'),
+          description: error instanceof Error ? error.message : t('Failed to load email templates. Please try again later.'),
           variant: "destructive",
         })
       } finally {
@@ -125,7 +129,7 @@ export default function EmailTemplates() {
       console.error('Error deleting template:', error)
       toast({
         title: "Error",
-        description: t('Failed to delete template. Please try again later.'),
+        description: error instanceof Error ? error.message : t('Failed to delete template. Please try again later.'),
         variant: "destructive",
       })
     }
@@ -147,7 +151,7 @@ export default function EmailTemplates() {
       console.error('Error updating template:', error)
       toast({
         title: "Error",
-        description: t('Failed to update template. Please try again later.'),
+        description: error instanceof Error ? error.message : t('Failed to update template. Please try again later.'),
         variant: "destructive",
       })
     }
@@ -161,16 +165,16 @@ export default function EmailTemplates() {
     try {
       const newTemplateWithId = await createEmailTemplate(user as unknown as FirebaseUser, newTemplate)
       setTemplates(prev => [...prev, newTemplateWithId] as EmailTemplate[])
-      setNewTemplate({ name: '', subject: '', contentMale: '', contentFemale: '', tags: [], isPrivate: false })
+      setNewTemplate({ name: '', subject: '', contentMale: '', contentFemale: '', tags: [], isPrivate: true, language: 'en', textAlign: 'left' })
       toast({
         title: t('Template Created'),
-        description: t('Your new email template has been created successfully.'),
+        description: t('Your new email template has been created successfully.')
       })
     } catch (error) {
       console.error('Error creating template:', error)
       toast({
         title: "Error",
-        description: t('Failed to create template. Please try again later.'),
+        description: error instanceof Error ? error.message : t('Failed to create template. Please try again later.'),
         variant: "destructive",
       })
     } finally {
@@ -185,6 +189,10 @@ export default function EmailTemplates() {
     const matchesTag = selectedTagFilter === 'all' || template.tags.includes(selectedTagFilter)
     return matchesSearch && matchesTag
   }) : []
+
+  function replacePlaceholders(template: string, placeholders: { [key: string]: string }): string {
+    return template.replace(/{(\w+)}/g, (_, key) => placeholders[key] || '');
+  }
 
   if (isLoading) {
     return (
@@ -260,7 +268,7 @@ export default function EmailTemplates() {
         </div>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredTemplates.length === 0 ? (
           <div className="col-span-full text-center py-10 text-gray-500">
             {t('No templates found matching your search criteria.')}
@@ -309,8 +317,11 @@ export default function EmailTemplates() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-2">{t('Subject')}: {template.subject}</p>
-              <p className="mb-4 whitespace-pre-wrap">
-                {selectedGender === 'male' ? template.contentMale : template.contentFemale}
+              <p className={`mb-4 whitespace-pre-wrap text-${template.language === 'he' ? 'right' : 'left'}`}>
+                {replacePlaceholders(
+                  selectedGender === 'male' ? template.contentMale : template.contentFemale,
+                  { name: userName }
+                )}
               </p>
               <div className="flex flex-wrap gap-2">
                 {template.tags.map((tag) => (
@@ -333,11 +344,11 @@ export default function EmailTemplates() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('Create New Email Template')}</DialogTitle>
             <DialogDescription>
-              {t('Create a new email template. Click save when you\'re done.')}
+              {t('Fill in the details for the new email template.')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center mb-4">
@@ -369,7 +380,7 @@ export default function EmailTemplates() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="contentMale" className="text-right">
-                  {t('Male Content')}
+                  {t('Male Version')}
                 </Label>
                 <Textarea
                   id="contentMale"
@@ -380,7 +391,7 @@ export default function EmailTemplates() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="contentFemale" className="text-right">
-                  {t('Female Content')}
+                  {t('Female Version')}
                 </Label>
                 <Textarea
                   id="contentFemale"
@@ -388,6 +399,28 @@ export default function EmailTemplates() {
                   onChange={(e) => setNewTemplate({ ...newTemplate, contentFemale: e.target.value })}
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="language" className="text-right">
+                  {t('Language')}
+                </Label>
+                <Select
+                  value={newTemplate.language}
+                  onValueChange={(value) => setNewTemplate({ 
+                    ...newTemplate, 
+                    language: value, 
+                    textAlign: value === 'he' ? 'right' : 'left' 
+                  })}
+                  className="col-span-3"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('Select a language')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">{t('English')}</SelectItem>
+                    <SelectItem value="he">{t('Hebrew')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="tags" className="text-right">
@@ -425,18 +458,18 @@ export default function EmailTemplates() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{t('Edit Email Template')}</DialogTitle>
-            <DialogDescription>
-              {t('Edit the email template. Click save when you\'re done.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mb-4">
-            <Logo />
-          </div>
-          {editTemplate && (
+      {editTemplate && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('Edit Email Template')}</DialogTitle>
+              <DialogDescription>
+                {t('Edit the email template. Click save when you\'re done.')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center mb-4">
+              <Logo />
+            </div>
             <form onSubmit={handleEdit}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -484,6 +517,24 @@ export default function EmailTemplates() {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editLanguage" className="text-right">
+                    {t('Language')}
+                  </Label>
+                  <Select
+                    value={editTemplate.language}
+                    onValueChange={(value) => setEditTemplate({ ...editTemplate, language: value })}
+                    className="col-span-3"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('Select a language')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">{t('English')}</SelectItem>
+                      <SelectItem value="he">{t('Hebrew')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="editTags" className="text-right">
                     {t('Tags')}
                   </Label>
@@ -501,6 +552,7 @@ export default function EmailTemplates() {
                     </SelectContent>
                   </Select>
                 </div>
+                
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="editPrivate"
@@ -514,9 +566,9 @@ export default function EmailTemplates() {
                 <Button type="submit">{t('Save Changes')}</Button>
               </DialogFooter>
             </form>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

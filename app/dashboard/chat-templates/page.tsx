@@ -16,22 +16,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { getChatTemplates, deleteChatTemplate, updateChatTemplate, createChatTemplate } from '@/lib/firebase/chat-templates'
-import { getTagColor, tagColors } from '@/utils/tag-colors'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Logo } from '@/components/icons/Logo'
 import { User as FirebaseUser } from 'firebase/auth'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
+import { predefinedTags } from '@/utils/predefined-tags'
+import { Checkbox } from '@/components/ui/checkbox'
+import { User } from 'firebase/auth'
+import { getTagColor, tagColors } from '@/utils/tag-colors'
 
 interface Template {
   id: string
   name: string
   contentMale: string
-  contentFemale: string
+  contentFemale: string | null
   tags: string[]
+  language: 'en' | 'he'
+  isPrivate: boolean
 }
-
 
 export default function ChatTemplates() {
   const { user } = useAuth()
@@ -41,6 +44,8 @@ export default function ChatTemplates() {
     contentMale: '',
     contentFemale: '',
     tags: [],
+    isPrivate: true,
+    language: 'en'
   })
   const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('male')
   const [userName, setUserName] = useState('')
@@ -51,15 +56,14 @@ export default function ChatTemplates() {
   const [bookmarkedTemplates, setBookmarkedTemplates] = useState<Set<string>>(new Set())
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTagFilter, setSelectedTagFilter] = useState<string>('all') // Updated initial value
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string>('all')
   const { t } = useLanguage();
-
 
   useEffect(() => {
     const fetchTemplates = async () => {
       if (!user) return;
       try {
-        const fetchedTemplates = await getChatTemplates(user);
+        const fetchedTemplates = await getChatTemplates(user as User);
         setTemplates(fetchedTemplates);
       } catch (error) {
         console.error('Error fetching templates:', error);
@@ -105,7 +109,7 @@ export default function ChatTemplates() {
   const handleDelete = async (templateId: string) => {
     if (!user) return;
     try {
-      await deleteChatTemplate(user, templateId)
+      await deleteChatTemplate(user as User, templateId)
       setTemplates(prev => prev.filter(template => template.id !== templateId))
       toast({
         title: t('Template Deleted'),
@@ -126,7 +130,7 @@ export default function ChatTemplates() {
     if (!editTemplate || !user) return
 
     try {
-      await updateChatTemplate(user, editTemplate.id, editTemplate)
+      await updateChatTemplate(user as User, editTemplate.id, editTemplate)
       setTemplates(prev => prev.map(template => template.id === editTemplate.id ? editTemplate : template))
       toast({
         title: t('Template Updated'),
@@ -149,9 +153,9 @@ export default function ChatTemplates() {
     setIsLoading(true)
 
     try {
-      const newTemplateWithId = await createChatTemplate(user as FirebaseUser, newTemplate)
+      const newTemplateWithId = await createChatTemplate(user as User, newTemplate)
       setTemplates(prev => [...prev, newTemplateWithId])
-      setNewTemplate({ name: '', contentMale: '', contentFemale: '', tags: [] })
+      setNewTemplate({ name: '', contentMale: '', contentFemale: '', tags: [], isPrivate: true, language: 'en' })
       toast({
         title: t('Template Created'),
         description: t('Your new chat template has been created successfully.'),
@@ -160,7 +164,7 @@ export default function ChatTemplates() {
       console.error('Error creating template:', error)
       toast({
         title: "Error",
-        description: t('Failed to create template. Please try again later.'),
+        description: error instanceof Error ? error.message : t('Failed to create template. Please try again later.'),
         variant: "destructive",
       })
     } finally {
@@ -169,46 +173,30 @@ export default function ChatTemplates() {
     }
   }
 
-  const handleTagSelection = (tag: string) => {
-    setNewTemplate(prev => ({ ...prev, tags: [tag] }))
-  }
-
-  // Filter templates based on search query and selected tags
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesTag = selectedTagFilter === 'all' || template.tags.includes(selectedTagFilter)
     return matchesSearch && matchesTag
   })
 
-  // Toggle tag filter
-  //const toggleTagFilter = (tag: string) => {
-  //  setSelectedTagFilter(prev => 
-  //    prev.includes(tag) 
-  //      ? prev.filter(t => t !== tag)
-  //      : [...prev, tag]
-  //  )
-  //}
-
-  console.log(user); // Check the structure of the user object
+  function replacePlaceholders(content: string, replacements: { [key: string]: string }): string {
+    return content.replace(/{(\w+)}/g, (_, key) => replacements[key] || `{${key}}`);
+  }
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">{t('Chat Templates')}</h1>
-        </div>
-        <div className="flex flex-col space-y-2 md:flex-row md:space-x-4 md:space-y-0">
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('Create Template')}
-          </Button>
-        </div>
+        <h1 className="text-2xl font-bold">{t('Chat Templates')}</h1>
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-2" />
+          {t('Create Template')}
+        </Button>
       </div>
       <div className="flex flex-col space-y-2 md:flex-row md:space-x-4 md:items-end mt-4">
         <div className="flex-1">
-          <Label htmlFor="userName">{t('Client Name')}</Label>
+          <Label htmlFor="name">{t('Name')}</Label>
           <Input
-            id="userName"
+            id="name"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             placeholder={t("Enter client's name")}
@@ -220,7 +208,7 @@ export default function ChatTemplates() {
             value={selectedGender}
             onValueChange={(value: 'male' | 'female') => setSelectedGender(value)}
           >
-             <SelectTrigger id="gender">
+            <SelectTrigger id="gender">
               <SelectValue placeholder={t('Choose gender')} />
             </SelectTrigger>
             <SelectContent>
@@ -248,7 +236,7 @@ export default function ChatTemplates() {
               <SelectValue placeholder={t('Filter by tag')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('All tags')}</SelectItem> {/* Updated SelectItem */}
+              <SelectItem value="all">{t('All tags')}</SelectItem>
               {Object.keys(tagColors).map(tag => (
                 <SelectItem key={tag} value={tag}>{tag}</SelectItem>
               ))}
@@ -266,7 +254,7 @@ export default function ChatTemplates() {
         ) : (
           filteredTemplates.map((template) => (
             <div key={template.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="p-4 space-y-4">
+              <div className={`p-4 space-y-4 ${template.language === 'he' ? 'text-right' : 'text-left'}`}>
                 <div className="flex justify-between items-start">
                   <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
                   <div className="flex space-x-2">
@@ -304,17 +292,23 @@ export default function ChatTemplates() {
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm">
-                  {selectedGender === 'male' ? template.contentMale : template.contentFemale}
+                  {replacePlaceholders(
+                    selectedGender === 'male' ? template.contentMale : template.contentFemale,
+                    { name: userName }
+                  )}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {template.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getTagColor(tag)}`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                  {template.tags.map((tagName) => {
+                    const tag = predefinedTags.find(t => t.name === tagName);
+                    return (
+                      <span
+                        key={tagName}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${tag?.color || 'bg-gray-200'}`}
+                      >
+                        {tagName}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -323,73 +317,91 @@ export default function ChatTemplates() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t('Create New Template')}</DialogTitle>
+            <DialogTitle>{t('Create New Chat Template')}</DialogTitle>
             <DialogDescription>
-              {t('Fill in the details for the new template. You can select up to 5 tags.')}
+              {t('Fill in the details for the new chat template.')}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center mb-4">
-            <Logo />
-          </div>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="newName" className="text-right">
+                <Label htmlFor="name" className="text-right">
                   {t('Name')}
                 </Label>
                 <Input
-                  id="newName"
+                  id="name"
                   value={newTemplate.name}
                   onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="newContentMale" className="text-right">
+                <Label htmlFor="contentMale" className="text-right">
                   {t('Male Content')}
                 </Label>
                 <Textarea
-                  id="newContentMale"
+                  id="contentMale"
                   value={newTemplate.contentMale}
                   onChange={(e) => setNewTemplate({ ...newTemplate, contentMale: e.target.value })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="newContentFemale" className="text-right">
+                <Label htmlFor="contentFemale" className="text-right">
                   {t('Female Content')}
                 </Label>
                 <Textarea
-                  id="newContentFemale"
+                  id="contentFemale"
                   value={newTemplate.contentFemale}
                   onChange={(e) => setNewTemplate({ ...newTemplate, contentFemale: e.target.value })}
                   className="col-span-3"
                 />
-              </div>
+              </div>  
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="newTags" className="text-right">
+                <Label htmlFor="tags" className="text-right">
                   {t('Tags')}
                 </Label>
-                <div className="col-span-3">
-                  <Select
-                    value={newTemplate.tags[0] || 'none'}
-                    onValueChange={(value) => setNewTemplate({ ...newTemplate, tags: value === 'none' ? [] : [value] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('Select a tag')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('No tag')}</SelectItem>
-                      {Object.keys(tagColors).map(tag => (
-                        <SelectItem key={tag} value={tag}>
-                          {tag}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={newTemplate.tags[0] || ''}
+                  onValueChange={(value) => setNewTemplate({ ...newTemplate, tags: value ? [value] : [] })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder={t('Select a tag')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {predefinedTags.map(tag => (
+                      <SelectItem key={tag.name} value={tag.name}>{tag.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="language" className="text-right">
+                  {t('Language')}
+                </Label>
+                <Select
+                  value={newTemplate.language}
+                  onValueChange={(value) => setNewTemplate({ ...newTemplate, language: value as 'en' | 'he' })}
+                  className="col-span-3"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('Select a language')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">{t('English')}</SelectItem>
+                    <SelectItem value="he">{t('Hebrew')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="private"
+                  checked={newTemplate.isPrivate}
+                  onCheckedChange={(checked: boolean) => setNewTemplate({ ...newTemplate, isPrivate: checked })}
+                />
+                <Label htmlFor="private">{t('Private template')}</Label>
               </div>
             </div>
             <DialogFooter>
@@ -454,22 +466,47 @@ export default function ChatTemplates() {
                   </Label>
                   <div className="col-span-3">
                     <Select
-                      value={editTemplate.tags[0] || 'none'}
-                      onValueChange={(value) => setEditTemplate({ ...editTemplate, tags: value === 'none' ? [] : [value] })}
+                      value={editTemplate.tags[0] || ''}
+                      onValueChange={(value) => setEditTemplate({ ...editTemplate, tags: value ? [value] : [] })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t('Select a tag')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">{t('No tag')}</SelectItem>
-                        {Object.keys(tagColors).map(tag => (
-                          <SelectItem key={tag} value={tag}>
-                            {tag}
+                        {predefinedTags.map(tag => (
+                          <SelectItem key={tag.name} value={tag.name}>
+                            {tag.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editLanguage" className="text-right">
+                    {t('Language')}
+                  </Label>
+                  <Select
+                    value={editTemplate.language}
+                    onValueChange={(value) => setEditTemplate({ ...editTemplate, language: value as 'en' | 'he' })}
+                    className="col-span-3"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('Select a language')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">{t('English')}</SelectItem>
+                      <SelectItem value="he">{t('Hebrew')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="editPrivate"
+                    checked={editTemplate.isPrivate}
+                    onCheckedChange={(checked: boolean) => setEditTemplate({ ...editTemplate, isPrivate: checked })}
+                  />
+                  <Label htmlFor="editPrivate">{t('Private template')}</Label>
                 </div>
               </div>
               <DialogFooter>

@@ -13,13 +13,14 @@ export interface EmailTemplate {
   isPrivate: boolean
   createdAt: Date
   updatedAt: Date
+  language: 'en' | 'he'
 }
 
 const emailTemplatesCollection = 'emailTemplates'
 
 export async function createEmailTemplate(
   user: User,
-  template: Omit<EmailTemplate, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  template: Omit<EmailTemplate, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'language'>
 ): Promise<EmailTemplate> {
   if (!user) throw new Error('User must be logged in to create a template')
 
@@ -28,10 +29,12 @@ export async function createEmailTemplate(
     userId: user.uid,
     createdAt: new Date(),
     updatedAt: new Date(),
+    
   })
 
   return {
     ...template,
+    language: 'en',
     id: docRef.id,
     userId: user.uid,
     createdAt: new Date(),

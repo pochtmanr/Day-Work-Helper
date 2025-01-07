@@ -3,12 +3,13 @@ import { collection, addDoc, getDocs, query, where, setDoc, doc, writeBatch } fr
 import { User } from 'firebase/auth'
 
 interface ChatTemplate {
-  userId: string
+  userId: string  
   name: string
   contentMale: string
   contentFemale: string
   tags: string[]
   isPrivate: boolean
+  language: 'en' | 'he'
 }
 
 interface EmailTemplate {
@@ -19,12 +20,14 @@ interface EmailTemplate {
   contentFemale: string
   tags: string[]
   isPrivate: boolean
+  language: 'en' | 'he'
 }
 
 interface CaseResolution {
   userId: string
   title: string
   description: string
+  language: 'en' | 'he'
   steps: {
     id: string
     content: string
@@ -81,7 +84,7 @@ export async function initializeDatabase(user: User) {
       updatedAt: new Date()
     }, { merge: true })
 
-    console.log('User document updated')
+    console.log('User document updated:', user.uid)
 
     // Initialize templates if they don't exist
     const batch = writeBatch(db)
@@ -101,6 +104,7 @@ export async function initializeDatabase(user: User) {
           name: 'Welcome Message',
           contentMale: 'Hello Mr. {name}, how can I assist you today?',
           contentFemale: 'Hello Ms. {name}, how can I assist you today?',
+          language: 'en',
           tags: ['greeting', 'welcome'],
           isPrivate: false
         }
@@ -132,6 +136,7 @@ export async function initializeDatabase(user: User) {
           subject: 'Following Up on Your Recent Issue',
           contentMale: 'Dear Mr. {name},\n\nI hope this email finds you well.',
           contentFemale: 'Dear Ms. {name},\n\nI hope this email finds you well.',
+          language: 'en',
           tags: ['follow-up', 'support'],
           isPrivate: false
         }
