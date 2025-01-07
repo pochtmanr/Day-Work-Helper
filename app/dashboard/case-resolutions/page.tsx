@@ -347,7 +347,7 @@ export default function CaseResolutions() {
                     <span
                       key={tag}
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        tagConfig?.color || 'bg-gray-100 text-gray-800'
+                        tagConfig?.color || 'bg-gray-200 text-gray-800'
                       }`}
                     >
                       {tag}
@@ -355,12 +355,12 @@ export default function CaseResolutions() {
                   )
                 })}
                 {resolution.isPublished && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-200 text-green-800">
                     {t('Published')}
                   </span>
                 )}
               </div>
-              <div className="mb-4">
+              <div className="mb-4 overflow-y-auto">
                 {renderContent(resolution.description, resolution.steps[0]?.links || [])}
               </div>
               {resolution.descriptionImages.length > 0 && (
@@ -376,7 +376,7 @@ export default function CaseResolutions() {
                   ))}
                 </div>
               )}
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto">
                 {resolution.steps.map((step, index) => (
                   <div key={step.id} className="space-y-2">
                     <div className="flex items-start space-x-2">
@@ -384,7 +384,7 @@ export default function CaseResolutions() {
                       {renderContent(step.content, step.links)}
                     </div>
                     {step.images.length > 0 && (
-                      <div className="flex flex-wrap gap-2 ml-6">
+                      <div className="flex flex-wrap gap-2 ml-6 overflow-y-auto">
                         {step.images.map((image, imageIndex) => (
                           <img
                             key={imageIndex}
@@ -397,7 +397,7 @@ export default function CaseResolutions() {
                       </div>
                     )}
                     {step.links.length > 0 && (
-                      <div className="ml-6 space-y-2">
+                      <div className="ml-6 space-y-2 overflow-y-auto">
                         {step.links.map((link, linkIndex) => (
                           <div key={linkIndex} className="flex items-center space-x-2">
                             <img src={link.image} alt="" className="w-8 h-8 rounded" />
@@ -425,7 +425,7 @@ export default function CaseResolutions() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('Create New Case Resolution')}</DialogTitle>
             <DialogDescription>

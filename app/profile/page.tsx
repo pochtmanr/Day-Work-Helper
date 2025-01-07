@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-import { deleteUser, updateProfile } from 'firebase/auth'
+import { deleteUser, updateProfile, User } from 'firebase/auth'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import Image from 'next/image'
 
@@ -33,7 +33,7 @@ export default function Profile() {
 
     setIsLoading(true)
     try {
-      await updateProfile(user, { displayName: name })
+      await updateProfile(user as unknown as User, { displayName: name })
       toast({
         title: "Name Updated",
         description: "Your name has been updated successfully.",
@@ -60,7 +60,7 @@ export default function Profile() {
       const storageRef = ref(storage, `user-photos/${user.uid}`)
       await uploadBytes(storageRef, file)
       const downloadURL = await getDownloadURL(storageRef)
-      await updateProfile(user, { photoURL: downloadURL })
+      await updateProfile(user as unknown as User, { photoURL: downloadURL })
       setPhotoURL(downloadURL)
       toast({
         title: "Photo Updated",
@@ -86,12 +86,12 @@ export default function Profile() {
 
     setIsLoading(true)
     try {
-      await deleteUser(user)
+      await deleteUser(user as unknown as User)
       toast({
         title: "Account Deleted",
         description: "Your account has been deleted successfully.",
       })
-      router.push('/')
+      router.push('/login')
     } catch (error) {
       console.error('Error deleting account:', error)
       toast({

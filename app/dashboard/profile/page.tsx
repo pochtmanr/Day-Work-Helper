@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-import { updateProfile, User, deleteUser, sendPasswordResetEmail, updatePassword } from 'firebase/auth'
+import { updateProfile, deleteUser, sendPasswordResetEmail, updatePassword, Auth } from 'firebase/auth'
 import Image from 'next/image'
 import {
   Select,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import Link from 'next/link'
 import supabase from '@/lib/supabase'
+import { User } from 'firebase/auth'
 
 const userTags = ['SupportPro', 'Meta Verified', 'Jedi', 'Admin', 'SME', 'Junior']
 
@@ -74,7 +75,7 @@ export default function Profile() {
     setIsLoading(true)
     try {
       const filePath = `user-photos/${user.uid}/${file.name}`
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('images')
         .upload(filePath, file)
 
@@ -86,7 +87,7 @@ export default function Profile() {
 
       console.log(publicUrl)
 
-      await updateProfile(user, { photoURL: publicUrl })
+      await updateProfile(user as unknown as User, { photoURL: publicUrl })
       setPhotoURL(publicUrl)
       toast({
         title: t('Photo Updated'),
@@ -148,7 +149,7 @@ export default function Profile() {
 
     setIsLoading(true)
     try {
-      await updatePassword(user, newPassword)
+      await updatePassword(user as unknown as User, newPassword)
       toast({
         title: "Success",
         description: t("Your password has been changed successfully."),
@@ -179,7 +180,7 @@ export default function Profile() {
 
     setIsLoading(true)
     try {
-      await sendPasswordResetEmail(user, user.email)
+      await sendPasswordResetEmail(user as unknown as Auth, user.email)
       toast({
         title: "Success",
         description: t("Check your email for instructions to reset your password."),
@@ -211,7 +212,7 @@ export default function Profile() {
 
     setIsLoading(true)
     try {
-      await deleteUser(user as User)
+      await deleteUser(user as unknown as User)
       toast({
         title: "Success",
         description: t("Your account has been deleted successfully."),
@@ -229,8 +230,8 @@ export default function Profile() {
     }
   }
 
-  const handleLanguageChange = (value: string) => {
-    setLanguage(value as 'en' | 'he')
+  const handleLanguageChange = (value: 'en' | 'he') => {
+    setLanguage(value)
   }
 
   if (!user) {
@@ -265,7 +266,7 @@ export default function Profile() {
         </div>
         <form onSubmit={handleNameChange} className="space-y-4">
           <div>
-            <Label htmlFor="name">{t('name')}</Label>
+            <Label htmlFor="name">{t('Name')}</Label>
             <Input
               id="name"
               type="text"
@@ -279,7 +280,7 @@ export default function Profile() {
           </Button>
         </form>
         <div className="mt-4">
-          <Label htmlFor="tag">{t('userTag')}</Label>
+          <Label htmlFor="tag">{t('User Tag')}</Label>
           <Select onValueChange={handleTagChange} value={tag}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder={t('Select a tag')} />
@@ -294,7 +295,7 @@ export default function Profile() {
           </Select>
         </div>
         <div className="mt-4">
-          <Label htmlFor="language">{t('language')}</Label>
+          <Label htmlFor="language">{t('Language')}</Label>
           <Select onValueChange={handleLanguageChange} value={language}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder={t('Select a language')} />
@@ -307,7 +308,7 @@ export default function Profile() {
         </div>
         <form onSubmit={handlePasswordChange} className="mt-6 space-y-4" autoComplete="off">
           <div>
-            <Label htmlFor="oldPassword">{t('oldPassword')}</Label>
+            <Label htmlFor="oldPassword">{t('Old Password')}</Label>
             <Input
               id="oldPassword"
               type="password"
@@ -318,7 +319,7 @@ export default function Profile() {
             />
           </div>
           <div>
-            <Label htmlFor="newPassword">{t('newPassword')}</Label>
+            <Label htmlFor="newPassword">{t('New Password')}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -339,7 +340,7 @@ export default function Profile() {
             className="w-full"
             disabled={isLoading}
           >
-            {t('resetPassword')}
+            {t('Reset Password')}
           </Button>
           <Button
             onClick={handleDeleteAccount}
@@ -347,14 +348,14 @@ export default function Profile() {
             className="w-full"
             disabled={isLoading}
           >
-            {t('deleteAccount')}
+            {t('Delete Account')}
           </Button>
           <Button
             onClick={logout}
             variant="outline"
             className="w-full"
           >
-            {t('logout')}
+            {t('Logout')}
           </Button>
         </div>
         <div className="mt-4 text-center">
