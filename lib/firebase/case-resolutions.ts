@@ -18,6 +18,7 @@ export interface CaseResolution {
   userId: string
   title: string
   description: string
+  reason: string
   descriptionImages: string[]
   steps: ResolutionStep[]
   tags: string[]

@@ -54,6 +54,7 @@ export default function CaseResolutions() {
   const [resolutions, setResolutions] = useState<CaseResolution[]>([])
   const [newResolution, setNewResolution] = useState<Omit<CaseResolution, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>({
     title: '',
+    reason: '',
     description: '',
     descriptionImages: [],
     steps: [],
@@ -178,7 +179,7 @@ export default function CaseResolutions() {
     setIsLoading(true)
     try {
       await createCaseResolution(user as unknown as User, newResolution as unknown as Omit<CaseResolution, 'id' | 'userId' | 'createdAt' | 'updatedAt'>)
-      setNewResolution({ title: '', description: '', descriptionImages: [], steps: [], tags: [], isPublished: false })
+      setNewResolution({ title: '', reason: '', description: '', descriptionImages: [], steps: [], tags: [], isPublished: false })
       loadResolutions()
       toast({
         title: "Success",
@@ -445,6 +446,26 @@ export default function CaseResolutions() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="reason">{t('Reason')}</Label>
+                <Textarea
+                  id="reason"
+                  value={newResolution.reason}
+                  onChange={(e) => setNewResolution({ ...newResolution, reason: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">{t('Issue Description')}</Label>
+                <Textarea
+                  id="description"
+                  value={newResolution.description}
+                  onChange={(e) => setNewResolution({ ...newResolution, description: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>{t('Tags')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {predefinedTags.map((tag) => (
@@ -462,27 +483,6 @@ export default function CaseResolutions() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">{t('Issue Description')}</Label>
-                <Textarea
-                  id="description"
-                  value={newResolution.description}
-                  onChange={(e) => {
-                    const newDescription = e.target.value
-                    const links = extractLinks(newDescription)
-                    setNewResolution({
-                      ...newResolution,
-                      description: newDescription,
-                      steps: newResolution.steps.map(step => ({
-                        ...step,
-                        links: links
-                      }))
-                    })
-                  }}
-                  required
-                />
               </div>
 
               <div className="space-y-2">
