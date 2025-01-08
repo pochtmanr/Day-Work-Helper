@@ -57,6 +57,7 @@ export default function ChatTemplates() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('all')
   const { t } = useLanguage();
+  const [hiddenTemplates, setHiddenTemplates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -182,6 +183,12 @@ export default function ChatTemplates() {
     return content.replace(/{(\w+)}/g, (_, key) => replacements[key] || `{${key}}`);
   }
 
+  const isOwner = (templateUserId: string) => user && user.uid === templateUserId;
+
+  const handleHideTemplate = (templateId: string) => {
+    setHiddenTemplates(prev => new Set(prev).add(templateId));
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -251,66 +258,75 @@ export default function ChatTemplates() {
             {t('No templates found matching your search criteria.')}
           </div>
         ) : (
-          filteredTemplates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className={`p-4 space-y-4 ${template.language === 'he' ? 'text-right' : 'text-left'}`}>
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopy((selectedGender === 'male' ? template.contentMale : template.contentFemale) ?? '')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleBookmark(template.id)}
-                    >
-                      <Bookmark className={`h-4 w-4 ${bookmarkedTemplates.has(template.id) ? 'fill-current text-yellow-500' : ''}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditTemplate(template)
-                        setIsEditDialogOpen(true)
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(template.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+          filteredTemplates.map((template, index) => (
+            !hiddenTemplates.has(template.id) && (
+              <div key={`${template.id}-${index}`} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <div className={`p-4 space-y-4 ${template.language === 'he' ? 'text-right' : 'text-left'}`}>
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopy((selectedGender === 'male' ? template.contentMale : template.contentFemale) ?? '')}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          toggleBookmark(template.id);
+                          await updateChatTemplate(user as unknown as User, template.id, { isPrivate: !template.isPrivate })
+                        }}
+                      >
+                        <Bookmark className={`h-4 w-4 ${bookmarkedTemplates.has(template.id) ? 'fill-current text-yellow-500' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditTemplate(template)
+                          setIsEditDialogOpen(true)
+                        }}
+                        disabled={!isOwner(template.userId)}
+                        className={!isOwner(template.userId) ? 'opacity-50 cursor-not-allowed' : ''}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(template.id)}
+                        disabled={!isOwner(template.userId)}
+                        className={!isOwner(template.userId) ? 'opacity-50 cursor-not-allowed' : ''}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    {replacePlaceholders(
+                      selectedGender === 'male' ? template.contentMale : template.contentFemale ?? '',
+                      { name: userName }
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {template.tags.map((tagName) => {
+                      const tag = predefinedTags.find(t => t.name === tagName);
+                      return (
+                        <span
+                          key={tagName}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${tag?.color || 'bg-gray-200'}`}
+                        >
+                          {tagName}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
-                <p className="text-gray-600 text-sm">
-                  {replacePlaceholders(
-                    selectedGender === 'male' ? template.contentMale : template.contentFemale ?? '',
-                    { name: userName }
-                  )}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {template.tags.map((tagName) => {
-                    const tag = predefinedTags.find(t => t.name === tagName);
-                    return (
-                      <span
-                        key={tagName}
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${tag?.color || 'bg-gray-200'}`}
-                      >
-                        {tagName}
-                      </span>
-                    );
-                  })}
-                </div>
               </div>
-            </div>
+            )
           ))
         )}
       </div>

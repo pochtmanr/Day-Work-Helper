@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase'
-import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 
 export interface EmailTemplate {
@@ -17,6 +17,19 @@ export interface EmailTemplate {
 }
 
 const emailTemplatesCollection = 'emailTemplates'
+
+export async function ensureCollectionExists() {
+  const collectionRef = collection(db, emailTemplatesCollection)
+  const snapshot = await getDocs(query(collectionRef, where('type', '==', 'placeholder')))
+  
+  if (snapshot.empty) {
+    await setDoc(doc(collectionRef, 'placeholder'), {
+      type: 'placeholder',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+  }
+}
 
 export async function createEmailTemplate(
   user: User,
@@ -45,19 +58,44 @@ export async function createEmailTemplate(
 export async function getEmailTemplates(user: User): Promise<EmailTemplate[]> {
   if (!user) throw new Error('User must be logged in to fetch templates')
 
-  const q = query(
-    collection(db, emailTemplatesCollection),
-    where('userId', '==', user.uid),
-    orderBy('createdAt', 'desc')
-  )
+  try {
+    // Query for user's own templates
+    const userTemplatesQuery = query(
+      collection(db, emailTemplatesCollection),
+      where('userId', '==', user.uid),
+      orderBy('isPrivate', 'asc'),
+      orderBy('createdAt', 'desc')
+    );
 
-  const querySnapshot = await getDocs(q)
-  return querySnapshot.docs.map(doc => ({
-    ...doc.data(),
-    id: doc.id,
-    createdAt: doc.data().createdAt.toDate(),
-    updatedAt: doc.data().updatedAt.toDate(),
-  })) as EmailTemplate[]
+    // Query for public templates
+    const publicTemplatesQuery = query(
+      collection(db, emailTemplatesCollection),
+      where('isPrivate', '==', false),
+      orderBy('userId', 'asc'),
+      orderBy('createdAt', 'desc')
+    );
+
+    // Execute both queries
+    const [userDocs, publicDocs] = await Promise.all([
+      getDocs(userTemplatesQuery),
+      getDocs(publicTemplatesQuery)
+    ]);
+
+    // Combine results
+    const allDocs = [...userDocs.docs, ...publicDocs.docs];
+    
+    return allDocs
+      .filter(doc => doc.id !== 'placeholder')
+      .map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        createdAt: doc.data().createdAt.toDate(),
+        updatedAt: doc.data().updatedAt.toDate(),
+      })) as EmailTemplate[];
+  } catch (error: any) {
+    console.error('Error getting email templates:', error);
+    throw new Error('Failed to fetch email templates: ' + (error.message || 'Unknown error'));
+  }
 }
 
 export async function updateEmailTemplate(

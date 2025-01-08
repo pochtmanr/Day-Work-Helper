@@ -54,28 +54,7 @@ export default function Login() {
     }
   }
 
-  const handleFacebookLogin = async () => {
-    if (isLoading) return
-
-    setIsLoading(true)
-    try {
-      await loginWithFacebook()
-      toast({
-        title: t("Login Successful"),
-        description: t("You have been logged in with Facebook successfully."),
-      })
-      router.push('/dashboard/chat-templates')
-    } catch (error: any) {
-      console.error('Facebook login error:', error)
-      toast({
-        title: t("Login Failed"),
-        description: error.message || t("Failed to login with Facebook. Please try again."),
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -130,17 +109,7 @@ export default function Login() {
             {isLoading ? t('Logging in...') : t('login')}
           </Button>
         </form>
-        <div className="mt-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleFacebookLogin}
-            disabled={isLoading}
-          >
-            <FaFacebook className="mr-2" />
-            {isLoading ? t('Processing...') : t('Login with Facebook')}
-          </Button>
-        </div>
+        <div className="mt-4 flex items-center justify-center"></div>
         <p className="mt-4 text-center text-sm text-gray-600">
           {t("Don't have an account?")}{' '}
           <Link href="/register" className="text-blue-600 hover:underline">

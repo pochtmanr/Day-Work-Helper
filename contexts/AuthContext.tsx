@@ -19,7 +19,7 @@ import { auth, db } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import { initializeDatabase, verifyDatabaseSetup } from '@/lib/firebase/init-database'
 import { useToast } from "@/components/ui/use-toast"
-import { getDoc, updateDoc, doc } from 'firebase/firestore'
+import { getDoc, updateDoc, doc, setDoc } from 'firebase/firestore'
 
 interface User {
   uid: string

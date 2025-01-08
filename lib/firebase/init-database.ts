@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase'
-import { collection, addDoc, getDocs, query, where, setDoc, doc, writeBatch } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, setDoc, doc, writeBatch, getDoc } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 
 interface ChatTemplate {
@@ -41,19 +41,22 @@ async function ensureCollection(collectionName: string) {
   console.log(`Ensuring collection ${collectionName} exists...`)
   try {
     const collectionRef = collection(db, collectionName)
-    const snapshot = await getDocs(query(collectionRef, where('type', '==', 'placeholder')))
+    const placeholderRef = doc(collectionRef, 'placeholder')
+    const placeholderDoc = await getDoc(placeholderRef)
     
-    if (snapshot.empty) {
+    if (!placeholderDoc.exists()) {
       console.log(`Creating placeholder for ${collectionName}...`)
-      await setDoc(doc(collectionRef, 'placeholder'), {
+      await setDoc(placeholderRef, {
         type: 'placeholder',
-        createdAt: new Date()
+        createdAt: new Date(),
+        isPrivate: false // Make placeholder documents public
       })
       console.log(`Created placeholder for ${collectionName}`)
     }
   } catch (error) {
     console.error(`Error ensuring collection ${collectionName}:`, error)
-    throw error
+    // Don't throw the error, just log it
+    console.warn(`Continuing despite error for ${collectionName}`)
   }
 }
 

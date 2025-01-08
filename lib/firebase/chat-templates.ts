@@ -10,6 +10,7 @@ export interface ChatTemplate {
   contentFemale: string
   tags: string[]
   language: 'en' | 'he'
+  isPrivate: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -25,6 +26,7 @@ export async function createChatTemplate(
   const docRef = await addDoc(collection(db, chatTemplatesCollection), {
     ...template,
     userId: user.uid,
+    isPrivate: template.isPrivate ?? false,
     createdAt: new Date(),
     updatedAt: new Date(),
   })
@@ -41,19 +43,44 @@ export async function createChatTemplate(
 export async function getChatTemplates(user: User): Promise<ChatTemplate[]> {
   if (!user) throw new Error('User must be logged in to fetch templates')
 
-  const q = query(
-    collection(db, chatTemplatesCollection),
-    where('userId', '==', user.uid),
-    orderBy('createdAt', 'desc')
-  )
+  try {
+    // Query for user's own templates
+    const userTemplatesQuery = query(
+      collection(db, chatTemplatesCollection),
+      where('userId', '==', user.uid),
+      orderBy('isPrivate', 'asc'),
+      orderBy('createdAt', 'desc')
+    );
 
-  const querySnapshot = await getDocs(q)
-  return querySnapshot.docs.map(doc => ({
-    ...doc.data(),
-    id: doc.id,
-    createdAt: doc.data().createdAt.toDate(),
-    updatedAt: doc.data().updatedAt.toDate(),
-  })) as ChatTemplate[]
+    // Query for public templates
+    const publicTemplatesQuery = query(
+      collection(db, chatTemplatesCollection),
+      where('isPrivate', '==', false),
+      orderBy('userId', 'asc'),
+      orderBy('createdAt', 'desc')
+    );
+
+    // Execute both queries
+    const [userDocs, publicDocs] = await Promise.all([
+      getDocs(userTemplatesQuery),
+      getDocs(publicTemplatesQuery)
+    ]);
+
+    // Combine results
+    const allDocs = [...userDocs.docs, ...publicDocs.docs];
+    
+    return allDocs
+      .filter(doc => doc.id !== 'placeholder')
+      .map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        createdAt: doc.data().createdAt.toDate(),
+        updatedAt: doc.data().updatedAt.toDate(),
+      })) as ChatTemplate[];
+  } catch (error: any) {
+    console.error('Error getting chat templates:', error);
+    throw new Error('Failed to fetch chat templates: ' + (error.message || 'Unknown error'));
+  }
 }
 
 export async function updateChatTemplate(

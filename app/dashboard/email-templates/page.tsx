@@ -33,7 +33,7 @@ import {
   updateEmailTemplate, 
   deleteEmailTemplate 
 } from '@/lib/firebase/email-templates'
-import { User as FirebaseUser } from 'firebase/auth'
+import { User as FirebaseUser, User } from 'firebase/auth'
 
 
 interface EmailTemplate {
@@ -194,6 +194,8 @@ export default function EmailTemplates() {
     return template.replace(/{(\w+)}/g, (_, key) => placeholders[key] || '');
   }
 
+  const isOwner = (templateUserId: string) => user && user.uid === templateUserId;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -274,8 +276,8 @@ export default function EmailTemplates() {
             {t('No templates found matching your search criteria.')}
           </div>
         ) : (
-          filteredTemplates.map((template) => (
-            <div key={template.id} className="p-4 bg-white rounded-lg shadow">
+          filteredTemplates.map((template, index) => (
+            <div key={`${template.id}-${index}`} className="p-4 bg-white rounded-lg shadow">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-semibold">{template.name}</h3>
                 <div className="flex space-x-2">
@@ -555,13 +557,18 @@ export default function EmailTemplates() {
                   <Checkbox
                     id="editPrivate"
                     checked={editTemplate.isPrivate}
-                    onCheckedChange={(checked: boolean) => setEditTemplate({ ...editTemplate, isPrivate: checked })}
+                    onCheckedChange={async (checked: boolean) => {
+                      setEditTemplate({ ...editTemplate, isPrivate: checked });
+                      await updateEmailTemplate(user as unknown as User, editTemplate.id, { isPrivate: checked });
+                    }}
                   />
                   <Label htmlFor="editPrivate">{t('Private template')}</Label>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">{t('Save Changes')}</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? t('Saving...') : t('Save Changes')}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
