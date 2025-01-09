@@ -38,11 +38,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl mt-2">
-              {t(currentTime.toLocaleString('en-US', { weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit' }))}
+            <h1 className="text-2xl mt-2 text-gray-600">
+              {t(currentTime.toLocaleString('en-US', { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}
             </h1>
           </div>
-          <Button onClick={() => {
+          <Button className="bg-black hover:bg-blue-900" onClick={() => {
             logout()
             router.push('/login')
           }}>

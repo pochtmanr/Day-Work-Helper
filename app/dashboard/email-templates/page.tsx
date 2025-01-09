@@ -271,7 +271,7 @@ export default function EmailTemplates() {
         </div>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         {filteredTemplates.length === 0 ? (
           <div className="col-span-full text-center py-10 text-gray-500">
             {t('No templates found matching your search criteria.')}

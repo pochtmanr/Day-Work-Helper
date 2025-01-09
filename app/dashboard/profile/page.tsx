@@ -234,37 +234,38 @@ export default function Profile() {
     setLanguage(value)
   }
 
+  const saveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      await updateUserProfile(name);
+      toast({
+        title: t('Settings Saved'),
+        description: t('Your settings have been saved successfully.'),
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: t('Save Failed'),
+        description: t('Failed to save your settings. Please try again.'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!user) {
-    return null
+    return null;
   }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold mb-6 text-center">{t('Profile Settings')}</h1>
-        <div className="mb-6 flex flex-col items-center">
-          {photoURL ? (
-            <Image
-              src={photoURL}
-              alt="Profile"
-              width={100}
-              height={100}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-gray-500">
-              {t('No Photo')}
-            </div>
-          )}
-          <Input
-            type="file"
-            onChange={(e) => handlePhotoUpload(e.target.files?.[0] as File)}
-            accept="image/*"
-            className="mt-2"
-            disabled={isLoading}
-          />
-        </div>
-        <form onSubmit={handleNameChange} className="space-y-4">
+        <form onSubmit={saveSettings} className="space-y-4">
           <div>
             <Label htmlFor="name">{t('Name')}</Label>
             <Input
@@ -275,9 +276,19 @@ export default function Profile() {
               disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? t('Updating...') : t('updateName')}
-          </Button>
+          <div className="mt-4">
+            <Label htmlFor="language">{t('Language')}</Label>
+            <Select onValueChange={handleLanguageChange} value={language}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t('Select a language')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">{t('English')}</SelectItem>
+                <SelectItem value="he">{t('Hebrew')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
         </form>
         <div className="mt-4">
           <Label htmlFor="tag">{t('User Tag')}</Label>
@@ -295,17 +306,10 @@ export default function Profile() {
           </Select>
         </div>
         <div className="mt-4">
-          <Label htmlFor="language">{t('Language')}</Label>
-          <Select onValueChange={handleLanguageChange} value={language}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t('Select a language')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">{t('English')}</SelectItem>
-              <SelectItem value="he">{t('Hebrew')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {t('Save Settings')}
+            </Button>
+          </div>
         <form onSubmit={handlePasswordChange} className="mt-6 space-y-4" autoComplete="off">
           <div>
             <Label htmlFor="oldPassword">{t('Old Password')}</Label>
