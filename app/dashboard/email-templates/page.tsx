@@ -95,11 +95,12 @@ export default function EmailTemplates() {
   }, [user])
 
   const handleCopy = (content: string) => {
-    navigator.clipboard.writeText(content)
+    const replacedContent = replacePlaceholders(content, { name: userName });
+    navigator.clipboard.writeText(replacedContent);
     toast({
       title: t('Copied'),
       description: t('Template content has been copied to clipboard.'),
-    })
+    });
   }
 
   const toggleBookmark = (templateId: string) => {

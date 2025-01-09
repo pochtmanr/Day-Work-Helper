@@ -86,11 +86,12 @@ export default function ChatTemplates() {
   }, [user]);
 
   const handleCopy = (content: string) => {
-    navigator.clipboard.writeText(content)
+    const replacedContent = replacePlaceholders(content, { name: userName });
+    navigator.clipboard.writeText(replacedContent);
     toast({
       title: t('Copied'),
       description: t('Template content has been copied to clipboard.'),
-    })
+    });
   }
 
   const toggleBookmark = (templateId: string) => {
@@ -178,8 +179,8 @@ export default function ChatTemplates() {
     return matchesSearch && matchesTag
   })
 
-  function replacePlaceholders(content: string, replacements: { [key: string]: string }): string {
-    return content.replace(/{(\w+)}/g, (_, key) => replacements[key] || `{${key}}`);
+  function replacePlaceholders(template: string, placeholders: { [key: string]: string }): string {
+    return template.replace(/{(\w+)}/g, (_, key) => placeholders[key] || '');
   }
 
   const isOwner = (templateUserId: string) => user && user.uid === templateUserId;
