@@ -335,11 +335,7 @@ export default function EmailTemplates() {
                     {tag}
                   </span>
                 ))}
-                {template.isPrivate && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    {t('Private')}
-                  </span>
-                )}
+              
               </div>
             </div>
           ))
@@ -352,11 +348,9 @@ export default function EmailTemplates() {
             <DialogTitle>{t('Create New Email Template')}</DialogTitle>
             <DialogDescription>
               {t('Fill in the details for the new email template.')}
+              <p className="text-sm text-gray-500">{t('Use placeholder')} <strong className="font-semibold text-gray-700">{t('{name}')}</strong> {t('in text field to insert the client\'s name.')}</p>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center mb-4">
-            <Logo />
-          </div>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
@@ -461,11 +455,10 @@ export default function EmailTemplates() {
               <DialogTitle>{t('Edit Email Template')}</DialogTitle>
               <DialogDescription>
                 {t('Edit the email template. Click save when you\'re done.')}
+                <p className="text-sm text-gray-500">{t('Use placeholder')} <strong className="font-semibold text-gray-700">{t('{name}')}</strong> {t('in text field to insert the client\'s name.')}</p>
               </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-center mb-4">
-              <Logo />
-            </div>
+           
             <form onSubmit={handleEdit}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -492,7 +485,7 @@ export default function EmailTemplates() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="editContentMale" className="text-right">
-                    {t('Male Content')}
+                    {t('Male Version')}
                   </Label>
                   <Textarea
                     id="editContentMale"
@@ -503,7 +496,7 @@ export default function EmailTemplates() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="editContentFemale" className="text-right">
-                    {t('Female Content')}
+                    {t('Female Version')}
                   </Label>
                   <Textarea
                     id="editContentFemale"
@@ -541,27 +534,17 @@ export default function EmailTemplates() {
                       <SelectValue placeholder={t('Select a tag')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(tagColors).map(tag => (
-                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                      {predefinedTags.map(tag => (
+                        <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                          {tag.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="editPrivate"
-                    checked={editTemplate.isPrivate}
-                    onCheckedChange={async (checked: boolean) => {
-                      setEditTemplate({ ...editTemplate, isPrivate: checked });
-                      await updateEmailTemplate(user as unknown as User, editTemplate.id, { isPrivate: checked });
-                    }}
-                  />
-                  <Label htmlFor="editPrivate">{t('Private template')}</Label>
-                </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="bg-black hover:bg-blue-900">
                   {isLoading ? t('Saving...') : t('Save Changes')}
                 </Button>
               </DialogFooter>

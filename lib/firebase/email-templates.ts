@@ -33,21 +33,22 @@ export async function ensureCollectionExists() {
 
 export async function createEmailTemplate(
   user: User,
-  template: Omit<EmailTemplate, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'language'>
+  template: Omit<EmailTemplate, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'language' | 'isPrivate'>
 ): Promise<EmailTemplate> {
   if (!user) throw new Error('User must be logged in to create a template')
 
   const docRef = await addDoc(collection(db, emailTemplatesCollection), {
     ...template,
     userId: user.uid,
+    isPrivate: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    
   })
 
   return {
     ...template,
     language: 'en',
+    isPrivate: true,
     id: docRef.id,
     userId: user.uid,
     createdAt: new Date(),

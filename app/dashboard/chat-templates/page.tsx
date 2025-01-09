@@ -335,6 +335,7 @@ export default function ChatTemplates() {
             <DialogTitle>{t('Create New Chat Template')}</DialogTitle>
             <DialogDescription>
               {t('Fill in the details for the new chat template.')}
+              <p className="text-sm text-gray-500">{t('Use placeholder')} <strong className="font-semibold text-gray-700">{t('{name}')}</strong> {t('in text field to insert the client\'s name.')}</p>
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -428,11 +429,9 @@ export default function ChatTemplates() {
               <DialogTitle>{t('Edit Template')}</DialogTitle>
               <DialogDescription>
                 {t('Edit the template. Click save when you\'re done.')}
+                <p className="text-sm text-gray-500">{t('Use placeholder')} <strong className="font-semibold text-gray-700">{t('{name}')}</strong> {t('in text field to insert the client\'s name.')}</p>
               </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-center mb-4">
-              <Logo />
-            </div>
             <form onSubmit={handleEdit}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
