@@ -59,32 +59,17 @@ export async function getEmailTemplates(user: User): Promise<EmailTemplate[]> {
   if (!user) throw new Error('User must be logged in to fetch templates')
 
   try {
-    // Query for user's own templates
+    // Query only for user's own templates
     const userTemplatesQuery = query(
       collection(db, emailTemplatesCollection),
       where('userId', '==', user.uid),
-      orderBy('isPrivate', 'asc'),
       orderBy('createdAt', 'desc')
     );
 
-    // Query for public templates
-    const publicTemplatesQuery = query(
-      collection(db, emailTemplatesCollection),
-      where('isPrivate', '==', false),
-      orderBy('userId', 'asc'),
-      orderBy('createdAt', 'desc')
-    );
-
-    // Execute both queries
-    const [userDocs, publicDocs] = await Promise.all([
-      getDocs(userTemplatesQuery),
-      getDocs(publicTemplatesQuery)
-    ]);
-
-    // Combine results
-    const allDocs = [...userDocs.docs, ...publicDocs.docs];
+    // Execute the query
+    const userDocs = await getDocs(userTemplatesQuery);
     
-    return allDocs
+    return userDocs.docs
       .filter(doc => doc.id !== 'placeholder')
       .map(doc => ({
         ...doc.data(),

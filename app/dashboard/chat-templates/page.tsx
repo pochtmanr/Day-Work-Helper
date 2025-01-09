@@ -185,15 +185,13 @@ export default function ChatTemplates() {
 
   const isOwner = (templateUserId: string) => user && user.uid === templateUserId;
 
-  const handleHideTemplate = (templateId: string) => {
-    setHiddenTemplates(prev => new Set(prev).add(templateId));
-  };
+  
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('Chat Templates')}</h1>
-        <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-black hover:bg-blue-900">
           <Plus className="h-4 w-4 mr-2" />
           {t('Create Template')}
         </Button>
@@ -251,11 +249,11 @@ export default function ChatTemplates() {
         </div>
       </div>
 
-      {/* Templates Grid */}
+      {/* Chat Templates Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredTemplates.length === 0 ? (
           <div className="col-span-full text-center py-10 text-gray-500">
-            {t('No templates found matching your search criteria.')}
+            {t('No chat templates found matching your search criteria.')}
           </div>
         ) : (
           filteredTemplates.map((template, index) => (
@@ -387,7 +385,9 @@ export default function ChatTemplates() {
                   </SelectTrigger>
                   <SelectContent>
                     {predefinedTags.map(tag => (
-                      <SelectItem key={tag.name} value={tag.name}>{tag.name}</SelectItem>
+                      <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                        {tag.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -409,15 +409,9 @@ export default function ChatTemplates() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="private"
-                  checked={newTemplate.isPrivate}
-                  onCheckedChange={(checked: boolean) => setNewTemplate({ ...newTemplate, isPrivate: checked })}
-                />
-                <Label htmlFor="private">{t('Private template')}</Label>
+              
               </div>
-            </div>
+            
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? t('Creating...') : t('Create Template')}

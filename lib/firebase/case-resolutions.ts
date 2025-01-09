@@ -3,13 +3,13 @@ import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, del
 import { User } from 'firebase/auth'
 
 export interface ResolutionStep {
-  id: string
+  id?: string
   content: string
   images: string[]
   links: {
     url: string
-    description: string
-    image: string
+    description?: string
+    image?: string
   }[]
 }
 
@@ -60,34 +60,26 @@ export async function getCaseResolutions(user: User): Promise<CaseResolution[]> 
   if (!user) throw new Error('User must be logged in to fetch case resolutions')
 
   try {
-    const userResolutionsQuery = query(
+    // Query for all case resolutions, ordered by creation date
+    const allResolutionsQuery = query(
       collection(db, caseResolutionsCollection),
-      where('userId', '==', user.uid),
-      orderBy('isPrivate', 'asc'),
-      orderBy('createdAt', 'desc'),
-      orderBy('__name__', 'desc')
+      orderBy('createdAt', 'desc')
     );
 
-    const publicResolutionsQuery = query(
-      collection(db, caseResolutionsCollection),
-      where('isPrivate', '==', false),
-      orderBy('createdAt', 'desc'),
-      orderBy('__name__', 'desc')
-    );
-
-    const [userDocs, publicDocs] = await Promise.all([
-      getDocs(userResolutionsQuery),
-      getDocs(publicResolutionsQuery)
-    ]);
-
-    const allDocs = [...userDocs.docs, ...publicDocs.docs];
+    const allDocs = await getDocs(allResolutionsQuery);
     
-    return allDocs.map(doc => ({
-      ...doc.data(),
-      id: doc.id,
-      createdAt: doc.data().createdAt.toDate(),
-      updatedAt: doc.data().updatedAt.toDate(),
-    })) as CaseResolution[];
+    return allDocs.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+        // Ensure steps and links have default values if not present
+        steps: data.steps || [],
+        tags: data.tags || [],
+      } as CaseResolution;
+    });
   } catch (error: any) {
     console.error('Error getting case resolutions:', error);
     throw new Error('Failed to fetch case resolutions: ' + (error.message || 'Unknown error'));

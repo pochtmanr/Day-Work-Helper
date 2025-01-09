@@ -34,6 +34,7 @@ import {
   deleteEmailTemplate 
 } from '@/lib/firebase/email-templates'
 import { User as FirebaseUser, User } from 'firebase/auth'
+import { predefinedTags } from '@/utils/predefined-tags';
 
 
 interface EmailTemplate {
@@ -211,7 +212,7 @@ export default function EmailTemplates() {
           <h1 className="text-2xl font-bold">{t('Email Templates')}</h1>
         </div>
         <div>
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-black hover:bg-blue-900">
             <Plus className="h-4 w-4 mr-2" />
             {t('Create Template')}
           </Button>
@@ -435,23 +436,17 @@ export default function EmailTemplates() {
                     <SelectValue placeholder={t('Select a tag')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(tagColors).map(tag => (
-                      <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                    {predefinedTags.map(tag => (
+                      <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                        {tag.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="private"
-                  checked={newTemplate.isPrivate}
-                  onCheckedChange={(checked: boolean) => setNewTemplate({ ...newTemplate, isPrivate: checked })}
-                />
-                <Label htmlFor="private">{t('Private template')}</Label>
-              </div>
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-black hover:bg-blue-900">
                 {isLoading ? t('Creating...') : t('Create Template')}
               </Button>
             </DialogFooter>
