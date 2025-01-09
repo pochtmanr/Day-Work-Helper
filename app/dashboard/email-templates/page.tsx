@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { Copy, Plus, Trash2, Edit, Bookmark, Search } from 'lucide-react'
-import { Checkbox } from "@/components/ui/checkbox"
-import { getTagColor, tagColors } from '@/utils/tag-colors'
+
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,6 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { Logo } from '@/components/icons/Logo'
 import { 
   createEmailTemplate, 
   getEmailTemplates, 
@@ -34,8 +32,7 @@ import {
   deleteEmailTemplate 
 } from '@/lib/firebase/email-templates'
 import { User as FirebaseUser, User } from 'firebase/auth'
-import { predefinedTags } from '@/utils/predefined-tags';
-
+import { emailTemplateTags } from '@/utils/email-template-tags'
 
 interface EmailTemplate {
   id: string
@@ -195,8 +192,6 @@ export default function EmailTemplates() {
     return template.replace(/{(\w+)}/g, (_, key) => placeholders[key] || '');
   }
 
-  const isOwner = (templateUserId: string) => user && user.uid === templateUserId;
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -259,12 +254,14 @@ export default function EmailTemplates() {
           </div>
           <Select value={selectedTagFilter} onValueChange={setSelectedTagFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('Filter by tag')} />
+              <SelectValue placeholder={t('Filter by tag')} className="text-gray-500" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('All tags')}</SelectItem>
-              {Object.keys(tagColors).map(tag => (
-                <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+              {emailTemplateTags.map(tag => (
+                <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
+                  {tag.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -327,15 +324,17 @@ export default function EmailTemplates() {
                 )}
               </p>
               <div className="flex flex-wrap gap-2">
-                {template.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getTagColor(tag)}`}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              
+                {template.tags.map(tag => {
+                  const tagInfo = emailTemplateTags.find(t => t.name === tag);
+                  return tagInfo ? (
+                    <span
+                      key={tag}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${tagInfo.color}`}
+                    >
+                      {tagInfo.name}
+                    </span>
+                  ) : null;
+                })}
               </div>
             </div>
           ))
@@ -430,8 +429,8 @@ export default function EmailTemplates() {
                     <SelectValue placeholder={t('Select a tag')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {predefinedTags.map(tag => (
-                      <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                    {emailTemplateTags.map(tag => (
+                      <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
                         {tag.name}
                       </SelectItem>
                     ))}
@@ -534,8 +533,8 @@ export default function EmailTemplates() {
                       <SelectValue placeholder={t('Select a tag')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {predefinedTags.map(tag => (
-                        <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                      {emailTemplateTags.map(tag => (
+                        <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
                           {tag.name}
                         </SelectItem>
                       ))}

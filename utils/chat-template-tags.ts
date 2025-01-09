@@ -1,0 +1,17 @@
+export const chatTemplateTags = [
+  { name: 'Greeting', color: 'bg-blue-100 text-blue-800' },
+  { name: 'Understanding problem', color: 'bg-green-100 text-green-800' },
+  { name: 'Permission to call', color: 'bg-yellow-100 text-yellow-800' },
+  { name: 'Requesting ID\'s', color: 'bg-red-100 text-red-800' },
+  { name: 'Internal notes', color: 'bg-gray-100 text-gray-800' },
+  { name: 'Instructions', color: 'bg-purple-100 text-purple-800' },
+  { name: 'Endings', color: 'bg-teal-100 text-teal-800' },
+  { name: 'Facebook', color: 'bg-indigo-100 text-indigo-800' },
+  { name: 'Instagram', color: 'bg-purple-200 text-purple-800' },
+  { name: 'Whatsapp', color: 'bg-green-200 text-green-800' },
+  { name: 'Messenger', color: 'bg-pink-100 text-pink-800' },
+  { name: 'Ads Manager', color: 'bg-orange-100 text-orange-800' },
+  { name: 'Business Manager', color: 'bg-teal-200 text-teal-800' },
+  { name: 'Commerce Manager', color: 'bg-red-200 text-red-800' },
+  { name: 'Other', color: 'bg-gray-100 text-gray-800' },
+]; 

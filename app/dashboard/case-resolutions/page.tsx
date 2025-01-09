@@ -18,7 +18,7 @@ import {
 import { getCaseResolutions, deleteCaseResolution, updateCaseResolution, createCaseResolution, CaseResolution } from '@/lib/firebase/case-resolutions'
 import { useAuth } from '@/contexts/AuthContext'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { predefinedTags } from '@/utils/predefined-tags'
+import { caseResolutionTags } from '@/utils/case-resolution-tags'
 import { ImageAttachment } from "@/components/ui/image-attachment"
 import { Switch } from "@/components/ui/switch"
 import { User } from 'firebase/auth'
@@ -203,9 +203,11 @@ export default function CaseResolutions() {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
-              {predefinedTags.map(tag => (
-                <SelectItem key={tag.name} value={tag.name}>{tag.name}</SelectItem>
+              <SelectItem value="all" className="text-gray-500">All tags</SelectItem>
+              {caseResolutionTags.map(tag => (
+                <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
+                  {tag.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -243,7 +245,7 @@ export default function CaseResolutions() {
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {resolution.tags && resolution.tags.map((tag) => {
-                  const tagConfig = predefinedTags.find(t => t.name === tag);
+                  const tagConfig = caseResolutionTags.find(t => t.name === tag);
                   return (
                     <span
                       key={tag}
@@ -329,7 +331,7 @@ export default function CaseResolutions() {
               <div className="space-y-2">
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2">
-                  {predefinedTags.map((tag) => (
+                  {caseResolutionTags.map((tag) => (
                     <button
                       key={tag.name}
                       type="button"
@@ -343,7 +345,7 @@ export default function CaseResolutions() {
                       }}
                       className={`px-3 py-1 rounded-full text-sm font-medium ${
                         newResolution.tags && newResolution.tags.includes(tag.name)
-                          ? tag.color
+                          ? tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
@@ -466,7 +468,7 @@ export default function CaseResolutions() {
               <div className="space-y-2">
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2">
-                  {predefinedTags.map((tag) => (
+                  {caseResolutionTags.map((tag) => (
                     <button
                       key={tag.name}
                       type="button"
@@ -486,7 +488,7 @@ export default function CaseResolutions() {
                       }}
                       className={`px-3 py-1 rounded-full text-sm font-medium ${
                         editResolution?.tags && editResolution.tags.includes(tag.name)
-                          ? tag.color
+                          ? tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >

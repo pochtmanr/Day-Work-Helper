@@ -18,12 +18,11 @@ import {
 import { getChatTemplates, deleteChatTemplate, updateChatTemplate, createChatTemplate, ChatTemplate } from '@/lib/firebase/chat-templates'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { Logo } from '@/components/icons/Logo'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { predefinedTags } from '@/utils/predefined-tags'
 import { Checkbox } from '@/components/ui/checkbox'
 import { User } from 'firebase/auth'
-import { getTagColor, tagColors } from '@/utils/tag-colors'
+import { chatTemplateTags } from '@/utils/chat-template-tags'
 
 interface Template {
   id: string
@@ -237,12 +236,14 @@ export default function ChatTemplates() {
           </div>
           <Select value={selectedTagFilter} onValueChange={setSelectedTagFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('Filter by tag')} />
+              <SelectValue placeholder={t('Filter by tag')} className="text-gray-500" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('All tags')}</SelectItem>
-              {Object.keys(tagColors).map(tag => (
-                <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+              {chatTemplateTags.map(tag => (
+                <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
+                  {tag.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -311,7 +312,7 @@ export default function ChatTemplates() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {template.tags.map((tagName) => {
-                      const tag = predefinedTags.find(t => t.name === tagName);
+                      const tag = chatTemplateTags.find(t => t.name === tagName);
                       return (
                         <span
                           key={tagName}
@@ -382,11 +383,11 @@ export default function ChatTemplates() {
                   onValueChange={(value) => setNewTemplate({ ...newTemplate, tags: value ? [value] : [] })}
                 >
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder={t('Select a tag')} />
+                    <SelectValue placeholder={t('Select a tag')} className="text-gray-500" />
                   </SelectTrigger>
                   <SelectContent>
-                    {predefinedTags.map(tag => (
-                      <SelectItem key={tag.name} value={tag.name} className={tag.color}>
+                    {chatTemplateTags.map(tag => (
+                      <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
                         {tag.name}
                       </SelectItem>
                     ))}
@@ -414,7 +415,7 @@ export default function ChatTemplates() {
               </div>
             
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-black hover:bg-blue-900">
                 {isLoading ? t('Creating...') : t('Create Template')}
               </Button>
             </DialogFooter>
@@ -477,11 +478,11 @@ export default function ChatTemplates() {
                       onValueChange={(value) => setEditTemplate({ ...editTemplate, tags: value ? [value] : [] })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('Select a tag')} />
+                        <SelectValue placeholder={t('Select a tag')} className="text-gray-500" />
                       </SelectTrigger>
                       <SelectContent>
-                        {predefinedTags.map(tag => (
-                          <SelectItem key={tag.name} value={tag.name}>
+                        {chatTemplateTags.map(tag => (
+                          <SelectItem key={tag.name} value={tag.name} className={tag.color + " rounded-full my-2 px-2 py-1 max-w-fit"}>
                             {tag.name}
                           </SelectItem>
                         ))}
